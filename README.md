@@ -1,86 +1,45 @@
-go-aws-auth
-===========
+# Go S3 Signature v2 Helper
+[![GoDoc](https://godoc.org/github.com/whats-this/go-s3-sig-v2?status.svg)](https://godoc.org/github.com/whats-this/go-s3-sig-v2)
 
-[![GoDoc](https://godoc.org/github.com/smartystreets/go-aws-auth?status.svg)](http://godoc.org/github.com/smartystreets/go-aws-auth)
+Go-S3-Sig-v2 is a fast and lightweight library for creating requests that
+implement
+[AWS' S3 v2 signature specification](https://docs.aws.amazon.com/AmazonS3/latest/dev/RESTAuthentication.html),
+which is particularly useful for S3-compatible object storage systems like
+[Pithos](https://github.com/exoscale/pithos) that don't support AWS v4
+signatures. It is a fork of
+[smartystreets/go-aws-auth](https://github.com/smartystreets/go-aws-auth) with
+all other signature types removed (as they are in `aws-sdk-go` and aren't
+needed for `whats-this`) and some performance improvements.
 
-Go-AWS-Auth is a comprehensive, lightweight library for signing requests to Amazon Web Services.
+This wouldn't be a thing if [aws-sdk-go](https://github.com/aws/aws-sdk-go) had
+it implemented to begin with.
 
-It's easy to use: simply build your HTTP request and call `awsauth.Sign(req)` before sending your request over the wire.
+# Using
+`go get` it:
 
+	$ go get github.com/whats-this/go-s3-sig-v2
 
+Then use it:
 
-### Supported signing mechanisms
+	import "github.com/whats-this/go-s3-sig-v2"
 
-- [Signed Signature Version 2](http://docs.aws.amazon.com/general/latest/gr/signature-version-2.html)
-- [Signed Signature Version 3](http://docs.aws.amazon.com/general/latest/gr/signing_aws_api_requests.html)
-- [Signed Signature Version 4](http://docs.aws.amazon.com/general/latest/gr/signature-version-4.html)
-- [Custom S3 Authentication Scheme](http://docs.aws.amazon.com/AmazonS3/latest/dev/RESTAuthentication.html)
-- [Security Token Service](http://docs.aws.amazon.com/STS/latest/APIReference/Welcome.html)
-- [S3 Query String Authentication](http://docs.aws.amazon.com/AmazonS3/latest/dev/RESTAuthentication.html#RESTAuthenticationQueryStringAuth)
-- [IAM Role](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html#instance-metadata-security-credentials)
+	credentials := s3sigv2.S3CredentialsPair{
+		AccessKeyID:     "",
+		SecretAccessKey: ""
+	}
+	credentials.SignHTTPRequest(req)
 
-For more info about AWS authentication, see the [comprehensive docs](http://docs.aws.amazon.com/general/latest/gr/signing_aws_api_requests.html) at AWS.
+The library does not check environment variables or anywhere else for
+credentials, it is up to you to manage where the credentials come from and
+expiration stuff.
 
-
-### Install
-
-Go get it:
-
-	$ go get github.com/smartystreets/go-aws-auth
-	
-Then import it:
-
-	import "github.com/smartystreets/go-aws-auth"
-
-
-### Using your AWS Credentials
-
-The library looks for credentials in this order:
-
-1. **Hard-code:** You can manually pass in an instance of `awsauth.Credentials` to any call to a signing function as a second argument:
-
-	```go
-	awsauth.Sign(req, awsauth.Credentials{
-		AccessKeyID: "Access Key ID", 
-		SecretAccessKey: "Secret Access Key",
-		SecurityToken: "Security Token",	// STS (optional)
-	})
-	```
-
-
-2. **Environment variables:** Set the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables with your credentials. The library will automatically detect and use them. Optionally, you may also set the `AWS_SECURITY_TOKEN` environment variable if you are using temporary credentials from [STS](http://docs.aws.amazon.com/STS/latest/APIReference/Welcome.html).
-
-3. **IAM Role:** If running on EC2 and the credentials are neither hard-coded nor in the environment, go-aws-auth will detect the first IAM role assigned to the current EC2 instance and use those credentials.
-
-(Be especially careful hard-coding credentials into your application if the code is committed to source control.)
-
-
-
-### Signing requests
-
-Just make the request, have it signed, and perform the request as you normally would.
-
-```go
-url := "https://iam.amazonaws.com/?Action=ListRoles&Version=2010-05-08"
-client := new(http.Client)
-
-req, err := http.NewRequest("GET", url, nil)
-
-awsauth.Sign(req)  // Automatically chooses the best signing mechanism for the service
-
-resp, err := client.Do(req)
-```
-
-You can use `Sign` to have the library choose the best signing algorithm depending on the service, or you can specify it manually if you know what you need:
-
-- `Sign2`
-- `Sign3`
-- `Sign4`
-- `SignS3` (deprecated for Sign4)
-- `SignS3Url` (for pre-signed S3 URLs; GETs only)
-
-
+Remember to be careful hard-coding credentials into your application if the code
+is committed to source control.
 
 ### Contributing
+You are more than welcome to contribute. If you are wanting to make a breaking
+change, please open an issue first to discuss it. Please ensure any tests pass
+with your contributions.
 
-Please feel free to contribute! Bug fixes are more than welcome any time, as long as tests assert correct behavior. If you'd like to change an existing implementation or see a new feature, open an issue first so we can discuss it. Thanks to all contributors!
+### License
+A copy of the MIT license can be found in `LICENSE`.
