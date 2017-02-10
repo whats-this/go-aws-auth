@@ -6,6 +6,7 @@ package s3sigv2
 import (
 	"crypto/hmac"
 	"crypto/sha1"
+	"encoding/base64"
 	"hash"
 	"net/http"
 	"sort"
@@ -45,8 +46,8 @@ func (c *S3CredentialsPair) GetSignatureBytes(req *http.Request) []byte {
 // string to use for the `Authorization` request header.
 func (c *S3CredentialsPair) SignHTTPRequest(req *http.Request) *http.Request {
 	prepareRequest(req)
-	signature := string(c.SignBytesHmacSHA1([]byte(stringToSign(req))))
-	authHeader := "AWS:" + c.AccessKeyID + ":" + signature
+	signature := c.SignBytesHmacSHA1([]byte(stringToSign(req)))
+	authHeader := "AWS " + c.AccessKeyID + ":" + base64.StdEncoding.EncodeToString(signature)
 	req.Header.Set("Authorization", authHeader)
 	return req
 }
@@ -55,8 +56,8 @@ func (c *S3CredentialsPair) SignHTTPRequest(req *http.Request) *http.Request {
 // string to use for the `Authorization` request header. This is just a
 // shorthand for
 // `s3CredentialsPair.SignHTTPRequest(request.Request.HTTPRequest)`.
-func (c *S3CredentialsPair) SignSDKRequest(req *request.Request) *http.Request {
-	return c.SignHTTPRequest(req.HTTPRequest)
+func (c *S3CredentialsPair) SignSDKRequest(req *request.Request) {
+	c.SignHTTPRequest(req.HTTPRequest)
 }
 
 // SignBytesHmacSHA1 signs a []byte using the SecretAccessKey and returns it.
@@ -145,7 +146,7 @@ func canonicalResource(req *http.Request) string {
 // token header into the request if supplied, and normalizes the request path if
 // it is empty.
 func prepareRequest(req *http.Request, token ...string) {
-	req.Header.Set("Date", time.Now().Format(s3TimeFormat))
+	req.Header.Set("Date", time.Now().UTC().Format(s3TimeFormat))
 	if len(token) > 0 && len(token[0]) > 0 {
 		req.Header.Set("X-Amz-Security-Token", token[0])
 	}
