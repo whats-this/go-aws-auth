@@ -22,10 +22,10 @@ const (
 
 var subresourcesArray []string
 
-// S3CredentialPair stores the information necessary to authenticate against the
-// S3-compatible API and provides methods to create signatures and/or attach
+// S3CredentialsPair stores the information necessary to authenticate against
+// the S3-compatible API and provides methods to create signatures and/or attach
 // them to requests.
-type S3CredentialPair struct {
+type S3CredentialsPair struct {
 	AccessKeyID     string
 	SecretAccessKey string
 	SecurityToken   string `json:"Token"`
@@ -36,14 +36,14 @@ type S3CredentialPair struct {
 // (not entire auth header). This will insert a `Date` header into the request
 // if it doesn't exist, as S3 signatures require a valid `Date` or `x-amz-date`
 // header.
-func (c *S3CredentialPair) GetSignatureBytes(req *http.Request) []byte {
+func (c *S3CredentialsPair) GetSignatureBytes(req *http.Request) []byte {
 	prepareRequest(req)
 	return c.SignBytesHmacSHA1([]byte(stringToSign(req)))
 }
 
 // SignHTTPRequest signs a request by adding missing headers and constructing a
 // string to use for the `Authorization` request header.
-func (c *S3CredentialPair) SignHTTPRequest(req *http.Request) *http.Request {
+func (c *S3CredentialsPair) SignHTTPRequest(req *http.Request) *http.Request {
 	prepareRequest(req)
 	signature := string(c.SignBytesHmacSHA1([]byte(stringToSign(req))))
 	authHeader := "AWS:" + c.AccessKeyID + ":" + signature
@@ -55,12 +55,12 @@ func (c *S3CredentialPair) SignHTTPRequest(req *http.Request) *http.Request {
 // string to use for the `Authorization` request header. This is just a
 // shorthand for
 // `s3CredentialsPair.SignHTTPRequest(request.Request.HTTPRequest)`.
-func (c *S3CredentialPair) SignSDKRequest(req *request.Request) *http.Request {
+func (c *S3CredentialsPair) SignSDKRequest(req *request.Request) *http.Request {
 	return c.SignHTTPRequest(req.HTTPRequest)
 }
 
 // SignBytesHmacSHA1 signs a []byte using the SecretAccessKey and returns it.
-func (c *S3CredentialPair) SignBytesHmacSHA1(content []byte) []byte {
+func (c *S3CredentialsPair) SignBytesHmacSHA1(content []byte) []byte {
 	if c.hmacSHA1 == nil {
 		c.hmacSHA1 = hmac.New(sha1.New, []byte(c.SecretAccessKey))
 	}
